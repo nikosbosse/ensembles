@@ -160,6 +160,7 @@ prediction_data <- map_dfr(file_paths,
                              )]
                              return(data)
                            }) %>%
+  filter(grepl("case", target) | grepl("death", target)) %>%
   mutate(target_type = ifelse(grepl("death", target), 
                               "Deaths", "Cases"), 
          horizon = as.numeric(substr(target, 1, 1))) %>%
