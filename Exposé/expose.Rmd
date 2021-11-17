@@ -1,6 +1,7 @@
 ---
 title: "Exposé_21_19_11"
 author: "Juan Sebastian Aristizabal Ortiz"
+author: "Emmanuel Tchoumkeu-Ngatat"
 date: "17 11 2021"
 output:
   pdf_document: default
@@ -11,22 +12,31 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+# Titel
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## Problem Beschreibung
+Epidemilogie
+Ensembles werden genutzt
+Keine Heuristiken zum Wahhl von Methode
+Viele Methoden
+Kein ausführliche Analyse von Methodenunterschiede
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Zielbeschreibung
+Empirisch Qualität und Gute von einfacheren Ensemblemethoden zur Verbesserung der Prognossequalität. 
 
-```{r cars}
-summary(cars)
-```
+- Datenbeschreibung 
+- Methodenbeschreibung
+   * Ensemble Mean
+   * Median Mean
+   * Quantile Mean
+- Implementierung 
+   * Enembles als flexible FUnktionen ausdrücken d.h. die sich leicht anpassen lassen. 
 
-## Including Plots
 
-You can also embed plots, for example:
+- Test Framework
+   * Scoring Kriterien
+   * Test Prozess: Bootstapping, Loocv?
+   
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
