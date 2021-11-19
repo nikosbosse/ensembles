@@ -8,6 +8,7 @@ library(stringr)
 library(data.table)
 library(scoringutils)
 library(purrr)
+library(tidyr)
 ```
 
 Model ensembles usually outperform individual models and forecasters in
@@ -166,6 +167,7 @@ prediction_data <- map_dfr(file_paths,
                              )]
                              return(data)
                            }) %>%
+  filter(grepl("case", target) | grepl("death", target)) %>%
   mutate(target_type = ifelse(grepl("death", target), 
                               "Deaths", "Cases"), 
          horizon = as.numeric(substr(target, 1, 1))) %>%
@@ -208,10 +210,34 @@ mean of the corresponding quantiles of all member models. E.g. the
 80%-quantile of the ensemble is the mean of all 80% quantiles of all
 preditive distributions.
 
+Simple example for a mean ensemble:
+
+``` r
+mean_ensemble <- hub_data %>%
+  group_by(location, target_type, target_end_date, true_value, horizon, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%
+  mutate(model = "mean-ensemble")
+
+scores_mean <- mean_ensemble %>%
+  eval_forecasts(summarise_by = c("target_type", "model"))
+```
+
 #### Median ensemble (untrained)
 
 Quantiles of the predictive distribution are computed as the mean of the
 corresponding quantiles of all member models.
+
+Simple example for a median ensemble:
+
+``` r
+median_ensemble <- hub_data %>%
+  group_by(location, target_type, target_end_date, horizon, true_value, quantile) %>%
+  summarise(prediction = median(prediction)) %>%
+  mutate(model = "median-ensemble")
+
+scores_median <- median_ensemble %>%
+  eval_forecasts(summarise_by = c("target_type", "model"))
+```
 
 #### Hayman-type ensembles (untrained or potentially trained)
 
@@ -269,6 +295,50 @@ and we can compare average performance for different *n*.
 
 How does performance of the ensemble variants change if we include or
 exclude models? Does that differ for different ensemble types?
+
+``` r
+# helper function
+create_mean_ensemble <- function(data, members) {
+  data %>%
+  filter(model %in% members) %>%
+  group_by(location, target_end_date, horizon, true_value, target_type, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%
+  mutate(model = "mean-ensemble")
+}
+
+score_forecasts <- function(data) {
+  score <- data %>%
+    eval_forecasts(summarise_by = c("target_type", "model"))
+  return(score$interval_score)
+}
+
+
+models_germany <- hub_data %>%
+  filter(location == "DE", 
+         model != "") %>%
+  pull(model) %>%
+  unique()
+  
+n <- 5
+
+models <- list()
+models[[1]] <- sample(models_germany, size = 5)
+models[[2]] <- sample(models_germany, size = 5)
+#...
+# get all posisble combinations
+
+scores <- list()
+
+data_germany <- hub_data %>%
+  filter(location == "DE")
+
+for (i in 1:length(models)) {
+  ensemble <- create_mean_ensemble(data_germany, members = models[[i]])
+  scores[[i]] <- score_forecasts(ensemble)
+}
+
+scores
+```
 
 #### Evaluating performance depending on the training period for trained ensembles
 

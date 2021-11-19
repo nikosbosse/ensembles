@@ -1,8 +1,8 @@
 ---
-title: "Exposé_21_19_11"
-author: "Juan Sebastian Aristizabal Ortiz"
-author: "Emmanuel Tchoumkeu-Ngatat"
-date: "17 11 2021"
+title: "Using Ensembles to improve forecast performance"
+subtitle: "An Exposé"
+author: "Juan Sebastian Aristizabal Ortiz,  Emmanuel Tchoumkeu-Ngatat"
+date: "19 11 2021"
 output:
   pdf_document: default
   html_document: default
@@ -12,31 +12,67 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Titel
+> [2] mir bis zum 19.11. ein kurzes Exposé (ca. eine Seite) zuzusenden, in dem Sie die zu untersuchende Fragestellung sowie identifizierte statistische Ansätze zur Lösung kurz beschreiben. 
 
-## Problem Beschreibung
-Epidemilogie
-Ensembles werden genutzt
-Keine Heuristiken zum Wahhl von Methode
-Viele Methoden
-Kein ausführliche Analyse von Methodenunterschiede
-
-## Zielbeschreibung
-Empirisch Qualität und Gute von einfacheren Ensemblemethoden zur Verbesserung der Prognossequalität. 
-
-- Datenbeschreibung 
-- Methodenbeschreibung
-   * Ensemble Mean
-   * Median Mean
-   * Quantile Mean
-- Implementierung 
-   * Enembles als flexible FUnktionen ausdrücken d.h. die sich leicht anpassen lassen. 
+> eine kleine Erinnerung an die zum 19.11. fälligen (ca. einseitigen) Exposés zur Ihren Praktikumsthemen. Idealerweise senden Sie mir bis dahin auch Ihre Terminpräferenzen für die Zwischenpräsentationen am 10.12. zu. Die Zwischenvorträge werden per Videokonferenz durchgeführt und Sie sollten bei möglichst allen Vorträgen anwesend sein. Genaueres zu den Regularien finden Sie auch in der angehängten Übersicht. 
 
 
-- Test Framework
-   * Scoring Kriterien
-   * Test Prozess: Bootstapping, Loocv?
+## Problem:
+
+Model Ensembles usually outperform individual models and forecasters in terms of predictive performance and therefore play an important role in any applied forecasting setting (e.g. epidemiology, finance, weather forecasting). 
+Learned ensembles that adjust ensemble weights based on past performance hold great potential, but empirically it has proven surprisingly difficult to improve on simple mean or median ensembles. 
+An important question therefore is what form of ensemble to choose.
+
+Often, researchers have to decide on what kind of ensemble to use and can only know much later whether
+their choice was good. 
+
+## Objective 
+
+> This research project aims to investigate model ensembles in an epidemiological setting and tries to establish heuristics for when to use which ensemble type.
+
+## Statistical Approach
+
+### Data Description:
+
+We have to different data sources at our disposition:
+   *  The first one consists of *human made forecasts* of COVID-19 arisen in the context of the UK COVID-19 Forecasting Challenge. 
+   *  The second one consists of *model based forecasts* postulated by research institutions for the European Forecast Hub. 
+   In this data set we have 31 different model types. 
+   *  Similar to the last one, the US Forecast Hub. 
+   A larger dataset. 
+
+### Ensemble Methods considered: 
+
+As already mentioned, *even simple* ensemble types such as the *mean ensemble* and the *median ensemble* show to be highly difficult to improve empirically.
+We thus consider this to methods and proceed as follows: 
+
+   1. We set the framework of "ensembling" and "comparing/evaluating" by means of a common function, that allows for efficient method switch and score calculation. 
+   For evaluating performance, we initially use WIS (Weighted Iterval Score), a proper scoring rule.  
+   2. We first proceed by comparing untrained ensemble-performance on the European Forescast hub data set.
+   Specifically, the effect of the *number of models aggregated*.
+   To this end, for each value of $n = 1,...,31$ representing the number of models to be aggregated, we:
+      i. Iteratively sample all possible combinations.
+      ii. For each sample, we built an ensemble. 
+      iii. we calculate the score for each ensemble. 
+      iv. We average all scores. 
+      v. We finally compare average performance for each $n$ value. 
+   
+   
    
 
 
 
+
+
+
+### Implementierung: Wie werden wir das alles ermöglichen?
+   * Ensembles als flexible FUnktionen ausdrücken d.h. die sich leicht anpassen lassen. 
+   * 
+
+
+### Test Framework
+   * Scoring Kriterien
+   * Test Prozess: Bootstapping, Loocv?
+
+
+# Using ensembles to improve forecast performance
