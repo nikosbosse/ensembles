@@ -3,11 +3,61 @@ Analysing ensembles to improve forecast performance
 
 ``` r
 library(dplyr)
+```
+
+    ## 
+    ## Attaching package: 'dplyr'
+
+    ## The following objects are masked from 'package:stats':
+    ## 
+    ##     filter, lag
+
+    ## The following objects are masked from 'package:base':
+    ## 
+    ##     intersect, setdiff, setequal, union
+
+``` r
 library(here)
+```
+
+    ## here() starts at /mnt/data/github-synced/ensembles
+
+``` r
 library(stringr)
 library(data.table)
+```
+
+    ## 
+    ## Attaching package: 'data.table'
+
+    ## The following objects are masked from 'package:dplyr':
+    ## 
+    ##     between, first, last
+
+``` r
 library(scoringutils)
+```
+
+    ## Note: The definition of the weighted interval score has slightly changed in version 0.1.5. If you want to use the old definition, use the argument `count_median_twice = TRUE` in the function `eval_forecasts()`
+
+``` r
 library(purrr)
+```
+
+    ## 
+    ## Attaching package: 'purrr'
+
+    ## The following object is masked from 'package:scoringutils':
+    ## 
+    ##     update_list
+
+    ## The following object is masked from 'package:data.table':
+    ## 
+    ##     transpose
+
+``` r
+library(tidyr)
+library(ggplot2)
 ```
 
 Model ensembles usually outperform individual models and forecasters in
@@ -58,19 +108,20 @@ uk_data <- fread("data/full-data-uk-challenge.csv")
 
 The data has the following columns:
 
-| Column name      | Column prediction                                                                                             |
-|------------------|---------------------------------------------------------------------------------------------------------------|
-| dailytruth_data  | Daily truth data used for the paper                                                                           |
-| ensemble_members | Models included in the official hub ensemble                                                                  |
-| ensemble_models  | Names of all ensemble models                                                                                  |
-| epitrend         | Classification of the epidemic into falling, rising etc (not used)                                            |
-| filtered_data    | Pre-filtered data used for the paper (with death forecasts restricted to the period after December 14th 2020) |
-| forecast_dates   | Forecast dates used for the paper                                                                             |
-| locations        | Location and Population Look Up for Germany and Poland                                                        |
-| prediction_data  | Forecast data used for the paper                                                                              |
-| regular_models   | Names of all regular models                                                                                   |
-| truth_data       | Truth data used for the paper                                                                                 |
-| unfiltered_data  | Unfiltered version of the combined prediction and truth data used for the paper                               |
+| Column name     | Column prediction                                                           |
+|-----------------|-----------------------------------------------------------------------------|
+| location_name   | Name of the country                                                         |
+| target_end_date | Date for which a forecast was made. This is always a Saturday               |
+| target_type     | The target variable to be predicted, cases or deaths                        |
+| true_value      | The corresponding true observed value                                       |
+| population      | population of the target country                                            |
+| forecast_date   | Date on which a forecast was made. This is always a Monday                  |
+| quantile        | quantile-level of the predictive distribution                               |
+| prediction      | Predicted value corresponding to the quantile-level specified in ‘quantile’ |
+| model           | Name of the forecaster                                                      |
+| target          | Summary of the prediction target variable (redundant information)           |
+| horizon         | Forecast horizon                                                            |
+| expert          | Whether or not a forecaster self-identified as an expert                    |
 
 Potential difficulties are:
 
@@ -101,6 +152,116 @@ hub_data <- rbindlist(
 )
 ```
 
+Optionally, the Hub data can be filtered to obtain a complete set of
+forecasts, as the current data set has missing forecasts:
+
+``` r
+# helper functions for visualisation
+plot_models_per_loc <- function(data) {
+  data |>
+    group_by(location, forecast_date) |>
+    mutate(n = length(unique(model))) |>
+    ggplot(aes(y = reorder(location, n), x = as.Date(forecast_date), fill = n)) + 
+    geom_tile() + 
+    facet_wrap(~ target_type) + 
+    labs(y = "Location", x = "Forecast date")
+} 
+
+plot_locs_per_model <- function(data) {
+  data |>
+    group_by(model, forecast_date) |>
+    mutate(n = length(unique(location))) |>
+    ggplot(aes(y = reorder(model, n), x = as.Date(forecast_date), fill = n)) + 
+    geom_tile() + 
+    facet_wrap(~ target_type) + 
+    labs(y = "Location", x = "Forecast date")
+} 
+```
+
+``` r
+plot_locs_per_model(hub_data)
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
+
+``` r
+plot_models_per_loc(hub_data)
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+
+``` r
+# helper function to make a complete set. The data can be either complete
+# per location (meaning that different locations will have different numbers of
+# models) or it can be complete overall (removing models and locations)
+make_complete_set <- function(hub_data, 
+                              forecast_dates = c("2021-03-15", 
+                                                 "2021-09-27"), 
+                              min_locations = 19, 
+                              per_location = FALSE) {
+  
+  # define the unit of a single forecast
+  unit_observation <- c("location", "forecast_date", "horizon", 
+                        "model", "target_type")
+  
+  h <- hub_data |>
+    # filter out models that don't have all forecast dates 
+    filter(forecast_date >= forecast_dates[1], 
+           forecast_date <= forecast_dates[2]) |>
+    group_by_at(c(unit_observation)) |>
+    ungroup(forecast_date) |>
+    mutate(n = length(unique(forecast_date))) |>
+    ungroup() |>
+    filter(n == max(n)) 
+  
+  # per_location means a complete set per location, meaning that every location
+  # has a complete set, but the numbers of models per location may be different
+  # if this is not desired, we need to restrict the models and locations
+  
+  if (!per_location) {
+    h <- h|>
+      # filter out models that don't have at least min_locations
+      group_by_at(unit_observation) |>
+      ungroup(location) |>
+      mutate(n = length(unique(location))) |>
+      ungroup() |>
+      filter(n >= min_locations) |> 
+      # filter out locations that don't have a full set of forecasts
+      group_by(location, target_type) |>
+      mutate(n = n()) |>
+      ungroup() |>
+      filter(n == max(n))
+  }
+  return(h)
+}
+
+hub_complete <- make_complete_set(hub_data)
+print(plot_locs_per_model(hub_complete))
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+print(plot_models_per_loc(hub_complete))
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+
+Or allowing different numbers of models per location:
+
+``` r
+hub_complete_loc <- make_complete_set(hub_data, per_location = TRUE)
+print(plot_locs_per_model(hub_complete_loc))
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+``` r
+plot_models_per_loc(hub_complete_loc)
+```
+
+![](Readme_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
 #### Updating the European Forecast Hub data (probably not necessary)
 
 To update the data, clone the whole repository or use subversion (svn)
@@ -121,6 +282,7 @@ To load the forecasts and truth data and to update the csv files, run
 ``` r
 # load truth data using the covidHubutils package ------------------------------
 devtools::install_github("reichlab/covidHubUtils")
+library(covidHubUtils)
 
 truth <- covidHubUtils::load_truth(hub = "ECDC") |>
   filter(target_variable %in% c("inc case", "inc death")) |>
@@ -166,6 +328,7 @@ prediction_data <- map_dfr(file_paths,
                              )]
                              return(data)
                            }) %>%
+  filter(grepl("case", target) | grepl("death", target)) %>%
   mutate(target_type = ifelse(grepl("death", target), 
                               "Deaths", "Cases"), 
          horizon = as.numeric(substr(target, 1, 1))) %>%
@@ -184,6 +347,37 @@ hub_data <- merge_pred_and_obs(prediction_data, truth,
   
 # split forecast data into two to reduce file size
 split <- floor(nrow(hub_data) / 2)
+
+# harmonise forecast dates to be the date a submission was made
+hub_data <- mutate(hub_data, 
+                   forecast_date = calc_submission_due_date(forecast_date))
+
+# function that performs some basic filtering to clean the data
+filter_hub_data <- function(hub_data) {
+  
+  # define the unit of a single forecast
+  unit_observation <- c("location", "forecast_date", "horizon", "model", "target_type")
+  
+  h <- hub_data |>
+    # filter out unnecessary horizons and dates
+    filter(horizon <= 4, 
+           forecast_date > "2021-03-08") |>
+    # filter out all models that don't have all quantiles
+    group_by_at(unit_observation) |>
+    mutate(n = n()) |>
+    ungroup() |>
+    filter(n == max(n)) |>
+    # filter out models that don't have all horizons
+    group_by_at(unit_observation) |>
+    ungroup(horizon) |>
+    mutate(n = length(unique(horizon))) |>
+    ungroup() |>
+    filter(n == max(n)) 
+  
+  return(h)
+}
+
+hub_data <- filter_hub_data(hub_data)
 
 fwrite(hub_data[1:split, ], 
        file = "data/full-data-european-forecast-hub-1.csv")
@@ -208,10 +402,34 @@ mean of the corresponding quantiles of all member models. E.g. the
 80%-quantile of the ensemble is the mean of all 80% quantiles of all
 preditive distributions.
 
+Simple example for a mean ensemble:
+
+``` r
+mean_ensemble <- hub_data %>%
+  group_by(location, target_type, target_end_date, true_value, horizon, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%
+  mutate(model = "mean-ensemble")
+
+scores_mean <- mean_ensemble %>%
+  eval_forecasts(summarise_by = c("target_type", "model"))
+```
+
 #### Median ensemble (untrained)
 
 Quantiles of the predictive distribution are computed as the mean of the
 corresponding quantiles of all member models.
+
+Simple example for a median ensemble:
+
+``` r
+median_ensemble <- hub_data %>%
+  group_by(location, target_type, target_end_date, horizon, true_value, quantile) %>%
+  summarise(prediction = median(prediction)) %>%
+  mutate(model = "median-ensemble")
+
+scores_median <- median_ensemble %>%
+  eval_forecasts(summarise_by = c("target_type", "model"))
+```
 
 #### Hayman-type ensembles (untrained or potentially trained)
 
@@ -269,6 +487,50 @@ and we can compare average performance for different *n*.
 
 How does performance of the ensemble variants change if we include or
 exclude models? Does that differ for different ensemble types?
+
+``` r
+# helper function
+create_mean_ensemble <- function(data, members) {
+  data %>%
+  filter(model %in% members) %>%
+  group_by(location, target_end_date, horizon, true_value, target_type, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%
+  mutate(model = "mean-ensemble")
+}
+
+score_forecasts <- function(data) {
+  score <- data %>%
+    eval_forecasts(summarise_by = c("target_type", "model"))
+  return(score$interval_score)
+}
+
+
+models_germany <- hub_data %>%
+  filter(location == "DE", 
+         model != "") %>%
+  pull(model) %>%
+  unique()
+  
+n <- 5
+
+models <- list()
+models[[1]] <- sample(models_germany, size = 5)
+models[[2]] <- sample(models_germany, size = 5)
+#...
+# get all posisble combinations
+
+scores <- list()
+
+data_germany <- hub_data %>%
+  filter(location == "DE")
+
+for (i in 1:length(models)) {
+  ensemble <- create_mean_ensemble(data_germany, members = models[[i]])
+  scores[[i]] <- score_forecasts(ensemble)
+}
+
+scores
+```
 
 #### Evaluating performance depending on the training period for trained ensembles
 
