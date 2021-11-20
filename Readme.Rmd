@@ -407,33 +407,40 @@ How does performance of the ensemble variants change if we include or exclude mo
 # helper function
 create_mean_ensemble <- function(data, members) {
   data %>%
-  filter(model %in% members) %>%
-  group_by(location, target_end_date, horizon, true_value, target_type, quantile) %>%
-  summarise(prediction = mean(prediction)) %>%
-  mutate(model = "mean-ensemble")
+    filter(model %in% members) %>%
+    group_by(location, target_end_date, horizon, true_value, target_type, quantile) %>%
+    summarise(prediction = mean(prediction)) %>%
+    mutate(model = "mean-ensemble") 
 }
 
 score_forecasts <- function(data) {
   score <- data %>%
     eval_forecasts(summarise_by = c("target_type", "model"))
-  return(score$interval_score)
+  
+  out <- score |>
+    select(target_type, interval_score) |>
+    tidyr::pivot_wider(names_from = target_type, values_from = interval_score) 
+  
+  return(out)
 }
 
-
-models_germany <- hub_data %>%
+# example with data from Germany
+# filtering not really needed for a complete data set, but left hear 
+# for non-complete data sets
+models_germany <- hub_complete %>%
   filter(location == "DE", 
          model != "") %>%
   pull(model) %>%
   unique()
-  
+
+# do for n = 1, ..., N  
 n <- 5
 
-models <- list()
-models[[1]] <- sample(models_germany, size = 5)
-models[[2]] <- sample(models_germany, size = 5)
-#...
-# get all posisble combinations
-
+# get all posisble combinations for n
+models <- combn(models_germany, m = n) |>
+  as.data.frame() |>
+  as.list()
+  
 scores <- list()
 
 data_germany <- hub_data %>%
@@ -444,7 +451,10 @@ for (i in 1:length(models)) {
   scores[[i]] <- score_forecasts(ensemble)
 }
 
-scores
+scores |>
+  bind_rows() |>
+  summarise(Cases = mean(Cases), 
+            Deaths = mean(Deaths))
 ```
 
 
