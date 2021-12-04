@@ -1,0 +1,92 @@
+# Changed helper function to produce single localized datasets
+
+## Optionally, the Hub data can be filtered to obtain a complete set of forecasts, as the current data set has missing forecasts: 
+  
+
+# helper functions for visualisation
+plot_models_per_loc <- function(data) {
+  data |>
+    group_by(location, forecast_date) |>
+    mutate(n = length(unique(model))) |>
+    ggplot(aes(y = reorder(location, n), x = as.Date(forecast_date), fill = n)) + 
+    geom_tile() + 
+    facet_wrap(~ target_type) + 
+    labs(y = "Location", x = "Forecast date")
+} 
+
+plot_locs_per_model <- function(data) {
+  data |>
+    group_by(model, forecast_date) |>
+    mutate(n = length(unique(location))) |>
+    ggplot(aes(y = reorder(model, n), x = as.Date(forecast_date), fill = n)) + 
+    geom_tile() + 
+    facet_wrap(~ target_type) + 
+    labs(y = "Location", x = "Forecast date")
+} 
+
+
+plot_locs_per_model(hub_data)
+
+
+plot_models_per_loc(hub_data)
+
+
+
+
+# helper function to make a complete set. The data can be either complete
+# per location (meaning that different locations will have different numbers of
+# models) or it can be complete overall (removing models and locations)
+make_complete_set <- function(hub_data, 
+                              forecast_dates = c("2021-03-15", 
+                                                 "2021-09-27"), 
+                              min_locations = 19, 
+                              per_location = FALSE) {
+  
+  # define the unit of a single forecast
+  unit_observation <- c("location", "forecast_date", "horizon", 
+                        "model", "target_type")
+  
+  h <- hub_data |>
+    # filter out models that don't have all forecast dates 
+    filter(forecast_date >= forecast_dates[1], 
+           forecast_date <= forecast_dates[2]) |>
+    group_by_at(c(unit_observation)) |>
+    ungroup(forecast_date) |>
+    mutate(n = length(unique(forecast_date))) |>
+    ungroup() |>
+    filter(n == max(n)) 
+  
+  # per_location means a complete set per location, meaning that every location
+  # has a complete set, but the numbers of models per location may be different
+  # if this is not desired, we need to restrict the models and locations
+  
+  if (!per_location) {
+    h <- h|>
+      # filter out models that don't have at least min_locations
+      group_by_at(unit_observation) |>
+      ungroup(location) |>
+      mutate(n = length(unique(location))) |>
+      ungroup() |>
+      filter(n >= min_locations) |> 
+      # filter out locations that don't have a full set of forecasts
+      group_by(location, target_type) |>
+      mutate(n = n()) |>
+      ungroup() |>
+      filter(n == max(n))
+  }
+  return(h)
+}
+
+hub_complete <- make_complete_set(hub_data)
+print(plot_locs_per_model(hub_complete))
+print(plot_models_per_loc(hub_complete))
+
+
+# Or allowing different numbers of models per location: 
+  
+
+hub_complete_loc <- make_complete_set(hub_data, per_location = TRUE)
+print(plot_locs_per_model(hub_complete_loc))
+
+
+plot_models_per_loc(hub_complete_loc)
