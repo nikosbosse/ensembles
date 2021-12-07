@@ -1,0 +1,55 @@
+---
+title: "EDA initial dataset"
+author: "Juan Sebastian Aristizabal Ortiz"
+date: "7 12 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=TRUE, eval = TRUE}
+library(dplyr)
+library(here)
+library(stringr)
+library(data.table)
+# library(scoringutils)
+# library(purrr)
+# library(tidyr)
+library(ggplot2)
+```
+
+## Setting:
+Quantile based data: forecasts provide a predictive distribution. 
+   * 23 quantiles = 11 prediction intervals + median prediction. 
+
+> Specifying how likely the true observed value will fall in a given range. 
+
+
+## Main questions to be solved by this EDA: 
+   - Show me the quantiles
+   - Show me the median prediction
+   - Does every quantile has an assigned corresponding probability?
+
+## EDA
+
+Load the data set. Next chunk can't be evaluated because RStudion doesn't find the path.
+I load the `hub_data` from the dataset.Rmd file in the data folder. 
+
+```{r, eval = FALSE}
+hub_data <- rbindlist(
+  list(
+    fread("full-data-european-forecast-hub-1.csv"), 
+    fread("full-data-european-forecast-hub-2.csv")
+  )
+)
+```
+
+
+
+
+
+
+
+
