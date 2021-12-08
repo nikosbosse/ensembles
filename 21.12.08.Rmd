@@ -1,0 +1,30 @@
+---
+title: "Protokoll Nikos Treffen 08.12.21"
+author: "Juan Sebastian Aristizabal Ortiz"
+date: "8 12 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Thomas Kneib Leitlinien und Anmerkungen
+Im  Rahmen  der  ersten  Präsentation  sollen
+    * die  untersuchte  Fragestellung
+    * die  verwendeten Daten
+    * und die geplante statistische Methodik dargestellt werden.
+
+- Sie fokussieren sich derzeit auf den Weighted Interval Score als zentrales Kriterium. Gibt es hier evtl. noch weitere Scores, die zur Bewertung herangezogen werden könnten?
+- Berücksichtigen Sie neben der Konstruktion von Punktvorhersagen auch die Konstruktion von Vorhersageverteilungen, um evtl. gegenüber mean und median ensembles noch etwas mehr herauskitzeln zu können? 
+
+
+- Nikos sagt: 
+
+Außerdem hab ich herausgefunden, wie das mit den Kombinationen geht: die combn function (hab auch code hinzugefügt). 
+
+# To do:
+- Termin für Abschlussvortrag 11.02.22
+
+# Dataset
+- Was ist horizon genau?
