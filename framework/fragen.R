@@ -21,6 +21,18 @@ mean_ensemble <- hub_data %>%
   mutate(model = "mean-ensemble")
 
 
+hub_data %>%
+  group_by(location, target_type, target_end_date, true_value, horizon, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%  #Q2 Nikos: How does exactly this summarize function here works?
+  mutate(model = "mean-ensemble")
+
+hub_data %>%
+  group_by(location, target_type, target_end_date, true_value, horizon, quantile) %>%
+  #mean(prediction) %>%  #Q2 Nikos: How does exactly this summarize function here works?
+  # fuer jede Gruppe, wird Summarise. 
+  mutate(model = "mean-ensemble", prediction = mean(prediction))
+
+
 ##
 
 ## Calculating Scores
@@ -30,7 +42,7 @@ score_forecasts <- function(data) {
   
   out <- score |>
     select(target_type, interval_score) |>
-    tidyr::pivot_wider(names_from = target_type, values_from = interval_score) # Q3. Please elaborate on this 
+    tidyr::pivot_wider(names_from = target_type, values_from = interval_score) # Q3. Please elaborate on this # um Darstellung von Scores. in zwei Spalten. 
   return(out)
 }
 

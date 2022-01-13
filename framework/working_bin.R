@@ -13,14 +13,14 @@ scores_median <- median_ensemble %>%
   eval_forecasts(summarise_by = c("target_type", "model"))
 
 # Test PIT
-median_tv <- as.vector(mean_ensemble$true_value)
-median_pred <- as.matrix(mean_ensemble$prediction)
+median_tv <- as.vector(median_ensemble$true_value)
+median_pred <- as.matrix(median_ensemble$prediction)
 pit(median_tv, median_pred)
 
 
 
-# example with data from Germany
-# filtering not really needed for a complete data set, but left hear 
+######## example with data from Germany
+# filtering not really needed for a complete data set, but left here 
 # for non-complete data sets
 models_germany <- hub_data %>%
   filter(location == "DE", 
@@ -29,12 +29,13 @@ models_germany <- hub_data %>%
   unique()
 
 # do for n = 1, ..., N  
-n <- 5
+n <- 2
 
 # get all possisble combinations for n
 models <- combn(models_germany, m = n) |>
   as.data.frame() |>
   as.list()
+
 
 scores <- list()
 
@@ -46,7 +47,15 @@ for (i in 1:length(models)) {
   scores[[i]] <- score_forecasts(ensemble)
 }
 
+#scores_orginal <- scores
+
 scores |>
   bind_rows() |>
   summarise(Cases = mean(Cases), 
             Deaths = mean(Deaths))
+
+
+mean_ensemble <- data_germany %>%
+  group_by(location, target_type, target_end_date, horizon, true_value, quantile) %>%
+  summarise(prediction = mean(prediction)) %>%
+  mutate(model = "median-ensemble")
