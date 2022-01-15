@@ -15,7 +15,7 @@ knit: (function(inputFile, encoding) {
 knitr::opts_chunk$set(echo = TRUE, 
                       eval = FALSE)
 ```
-# Objectives:
+# Objectives with corresponding To Do:
 
 ## 1. Analyse the performance of different ensemble techniques
 Greater goal. 
@@ -23,26 +23,36 @@ Answered/achieved when answering the questions.
 
 ## 2. Specifically, analyse performance depending on different factors like
 
-### 2.1 The number of available forecasting models
-N Zahl randomly untersuchen. 
+### 2.1 The number of available forecasting models i.e analyse N randomly
+- data.R script
+   + group functions for data cleaning and extracting.
+   
+- n.R script
+   + clean code for script
+   +  for loop for all n
+   + perform the score calculation for all n. 
+   + extract scores in a csv.data
+   + analyse scores. 
+
 
 
 ### 2.2 the degree of similarity between available forecasting models
-Ein Similarity Crterium herausfinden
+Similarity crteria --> Analyse given models. 
     - Which are linear models
-    - Which are enembles models 
+    - Which are enembles models
     - which are glm 
+    - Which are DNN
+- data.frame with modelname and corresponding modeltype
 
 ### 2.3 the available training data
-Falls genug Zeit dann Datenquelle berücksichtigen: UK DATEN. 
+If remaining time, analyse other data sources i.e UK
 
 ## 3. Analyse how much do individual models contribute to an ensemble.
 Can a model be a valuable contribution to an ensemble, even though it is not a good forecasting model if looked at in isolation?
 
 ## 3.1 (General) Model drop
 
-Random combinatorik. 
-e.g. ein Ensemble mit 19 außer ein bestimmter. 
+Random combinatorik. e.g. ein Ensemble mit 19 außer ein bestimmter. 
 
 Wie variable die Ensemble Score ist, wenn man modellen raus nimmts. 
 
@@ -79,6 +89,6 @@ Question:  Inwieweit das Model improve, wenn man das Model rausnimmt oder reinni
 - Heterogenität-Homogenität von Mitglieder 
 (Bereits in 2.2 analysiert)
 
-# 5. Analyse how stable forecast performance of different ensemble types is
+## 5. Analyse how stable forecast performance of different ensemble types is
 - Robustness/stability (are they the same?) already adressed in 3.2
  
